@@ -48,11 +48,11 @@ public class Player : MonoBehaviour
 
     private void Touch()
     {
-        foreach(Touch touch in Input.touches)
+        foreach(Touch touch in Input.touches) //Enable multiple touches at same time.
         {
-            if (touch.position.x > Screen.width / 2)
+            if (touch.position.x > Screen.width / 2) // Touch on right side of screen.
             {
-                if (touch.phase == TouchPhase.Began)
+                if (touch.phase == TouchPhase.Began) // Only action when touch first initiated.
                 {
                     GameObject laser = Instantiate(projectilePrefab, gun.transform.position, transform.rotation) as GameObject;
                     AudioSource.PlayClipAtPoint(laserSFX, Camera.main.transform.position, sfxVolume);
@@ -60,7 +60,7 @@ public class Player : MonoBehaviour
                 }
 
             }
-            else if (touch.position.x < Screen.width / 2)
+            else if (touch.position.x < Screen.width / 2) // Touch on left side of screen.
             {
                 {
                     Vector2 upwardVelocityToAdd = new Vector2(0f, thrusterPower);
@@ -68,7 +68,7 @@ public class Player : MonoBehaviour
                     myAnimator.SetBool("isFlying", true);
                     thrusterVFX.Play();
                 }
-                if(touch.phase == TouchPhase.Ended)
+                if(touch.phase == TouchPhase.Ended) // Action when touch has ended.
                 {
                     myAnimator.SetBool("isFlying", false);
                     thrusterVFX.Stop();

@@ -1,43 +1,47 @@
-﻿using System;
+﻿using System.Collections;
 using UnityEngine;
 
 
-public class EnemyShip : MonoBehaviour
+public class EnemyBasic : MonoBehaviour
 {
     [Header("General")]
     [SerializeField] string alienName;
     [Range(0f, 10f)] [SerializeField] float speed = 1f;
     [SerializeField] int enemyHealth = 1;
     [SerializeField] float bonusScore = 50f;
-    
-    [Header("Projectile")]
+
+    [Header("Gun")]
     [SerializeField] GameObject projectilePrefab;
     [SerializeField] GameObject gun;
     [SerializeField] float projectileSpeed = 1f;
     [SerializeField] float minTimeBetweenShots = 0.2f;
     [SerializeField] float maxTimeBetweenShots = 2f;
-    
+
     [Header("Effects")]
     [SerializeField] AudioClip deathSFX;
     [SerializeField] AudioClip laserSFX;
-    [SerializeField] GameObject explosionVFX;
-    [SerializeField] float explosionDuration = 1f;
-    
+    [SerializeField] float waitToDestroyInSeconds = 2f;
+
 
     private Rigidbody2D rigidbody;
     private Vector2 screenBounds;
+    private Animator myAnimator;
+    private CapsuleCollider2D myCollider;
 
     float shotCounter;
     float sfxVolume;
+    bool isAlive = true;
 
 
     private void Start()
     {
-        rigidbody = GetComponent<Rigidbody2D>();
+        rigidbody = this.GetComponent<Rigidbody2D>();
         rigidbody.velocity = new Vector2(-speed, 0f);
+        myAnimator = GetComponent<Animator>();
         screenBounds = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, Camera.main.transform.position.z));
         shotCounter = UnityEngine.Random.Range(minTimeBetweenShots, maxTimeBetweenShots);
         sfxVolume = PlayerPrefsController.GetMasterSFXVolume();
+        myCollider = GetComponent<CapsuleCollider2D>();
     }
 
 
@@ -48,7 +52,11 @@ public class EnemyShip : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-        CountDownAndShoot(); 
+        if (isAlive)
+        {
+            CountDownAndShoot();
+        }
+
     }
 
     private void CountDownAndShoot()
@@ -63,30 +71,33 @@ public class EnemyShip : MonoBehaviour
 
     private void Fire()
     {
+
         if (transform.position.x < screenBounds.x)
         {
             GameObject laser = Instantiate(projectilePrefab, gun.transform.position, transform.rotation) as GameObject;
             laser.GetComponent<Rigidbody2D>().velocity = new Vector2(-projectileSpeed, 0);
             AudioSource.PlayClipAtPoint(laserSFX, Camera.main.transform.position, sfxVolume);
-        }            
+        }
     }
 
-    public void DealDamage(int damage) // Called from projectile.
+    public void DealDamage(int damage) // Called from projectle script.
     {
         enemyHealth -= damage;
-        if(enemyHealth <= 0)
+        if (enemyHealth <= 0)
         {
             UnlockAlien();
-            Destroy(gameObject);
+            myCollider.enabled = false;
             AudioSource.PlayClipAtPoint(deathSFX, Camera.main.transform.position, sfxVolume * 2);
-            GameObject explosion = Instantiate(explosionVFX, transform.position, transform.rotation);
-            Destroy(explosion, explosionDuration);
+            myAnimator.SetTrigger("isDead");
+            speed = 0;
             FindObjectOfType<GameManager>().AddBonusScore(bonusScore);
+            isAlive = false;
+            Destroy(gameObject, waitToDestroyInSeconds);
             AddStars();
         }
     }
 
-    public void UnlockAlien() // Unlock Alien on Alien Data Scene.
+    public void UnlockAlien() // Unlocks Alien info when destroyed.
     {
         int aliensKilled = 1;
 
@@ -101,5 +112,6 @@ public class EnemyShip : MonoBehaviour
         int totalStars = PlayerPrefs.GetInt("Stars", 0);
         totalStars += 2;
         PlayerPrefs.SetInt("Stars", totalStars);
+        Debug.Log("Stars Added");
     }
 }
